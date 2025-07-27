@@ -1,22 +1,18 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useStore } from "@/store/useStore";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
-import { TrendingUp, Star, Users, ShoppingCart, DollarSign, Package } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from "recharts";
+import { TrendingUp, Star, Users, ShoppingCart, DollarSign, Package, ArrowUp, ArrowDown, Activity, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 
-// Card components inline
+// Modern Card Component
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn(
-      "rounded-lg border bg-card text-card-foreground shadow-sm",
-      className
-    )}
+    className={cn("card-modern", className)}
     {...props}
   />
 ))
@@ -28,7 +24,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    className={cn("flex flex-col space-y-1.5 pb-4", className)}
     {...props}
   />
 ))
@@ -40,10 +36,7 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn(
-      "text-2xl font-semibold leading-none tracking-tight",
-      className
-    )}
+    className={cn("text-xl font-semibold leading-none tracking-tight text-foreground", className)}
     {...props}
   />
 ))
@@ -65,62 +58,48 @@ const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+  <div ref={ref} className={cn("", className)} {...props} />
 ))
 CardContent.displayName = "CardContent"
 
-// Badge component inline
-const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-  {
-    variants: {
-      variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-)
+// Modern Badge Component
+const Badge = ({ className, children, variant = "default", ...props }: {
+  className?: string;
+  children: React.ReactNode;
+  variant?: "default" | "success" | "warning" | "destructive";
+}) => {
+  const variants = {
+    default: "bg-primary/20 text-primary border-primary/30",
+    success: "bg-success/20 text-success border-success/30",
+    warning: "bg-warning/20 text-warning border-warning/30",
+    destructive: "bg-destructive/20 text-destructive border-destructive/30",
+  };
 
-export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
-
-function Badge({ className, variant, ...props }: BadgeProps) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
-  )
-}
+    <div className={cn(
+      "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+      variants[variant],
+      className
+    )} {...props}>
+      {children}
+    </div>
+  );
+};
 
-// Chart components inline
+// Chart Container Component
 const ChartContainer = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
     config?: Record<string, any>
   }
->(({ id, className, children, config, ...props }, ref) => {
-  const uniqueId = React.useId()
-  const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
-
+>(({ className, children, config, ...props }, ref) => {
   return (
     <div
-      data-chart={chartId}
       ref={ref}
-      className={cn(
-        "flex aspect-video justify-center text-xs",
-        className
-      )}
+      className={cn("w-full h-[300px]", className)}
       {...props}
     >
-      <ResponsiveContainer>
+      <ResponsiveContainer width="100%" height="100%">
         {children as React.ReactElement}
       </ResponsiveContainer>
     </div>
@@ -131,11 +110,11 @@ ChartContainer.displayName = "Chart"
 const ChartTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="rounded-lg border bg-background p-2 shadow-md">
-        <p className="font-medium">{label}</p>
+      <div className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl p-3 shadow-2xl">
+        <p className="font-medium text-foreground">{label}</p>
         {payload.map((item: any, index: number) => (
-          <p key={index} className="text-sm">
-            <span className="font-medium">{item.name}:</span> {item.value}
+          <p key={index} className="text-sm text-muted-foreground">
+            <span className="font-medium" style={{ color: item.color }}>{item.name}:</span> {item.value}
           </p>
         ))}
       </div>
@@ -143,8 +122,6 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   }
   return null
 }
-
-const ChartTooltipContent = ChartTooltip
 
 const Dashboard = () => {
   const { orders, feedback } = useStore();
@@ -172,160 +149,197 @@ const Dashboard = () => {
 
   // Chart data
   const ratingDistribution = [
-    { rating: "5 Stars", count: feedback.filter(f => f.rating === 5).length },
-    { rating: "4 Stars", count: feedback.filter(f => f.rating === 4).length },
-    { rating: "3 Stars", count: feedback.filter(f => f.rating === 3).length },
-    { rating: "2 Stars", count: feedback.filter(f => f.rating === 2).length },
-    { rating: "1 Star", count: feedback.filter(f => f.rating === 1).length },
+    { rating: "5★", count: feedback.filter(f => f.rating === 5).length, fill: "#10b981" },
+    { rating: "4★", count: feedback.filter(f => f.rating === 4).length, fill: "#3b82f6" },
+    { rating: "3★", count: feedback.filter(f => f.rating === 3).length, fill: "#f59e0b" },
+    { rating: "2★", count: feedback.filter(f => f.rating === 2).length, fill: "#ef4444" },
+    { rating: "1★", count: feedback.filter(f => f.rating === 1).length, fill: "#dc2626" },
   ];
 
   const sentimentData = [
-    { name: "Positive", value: feedback.filter(f => f.sentiment === 'Positive').length, color: "#10b981" },
-    { name: "Neutral", value: feedback.filter(f => f.sentiment === 'Neutral').length, color: "#f59e0b" },
-    { name: "Negative", value: feedback.filter(f => f.sentiment === 'Negative').length, color: "#ef4444" },
+    { name: "Positive", value: feedback.filter(f => f.sentiment === 'Positive').length, fill: "#10b981" },
+    { name: "Neutral", value: feedback.filter(f => f.sentiment === 'Neutral').length, fill: "#f59e0b" },
+    { name: "Negative", value: feedback.filter(f => f.sentiment === 'Negative').length, fill: "#ef4444" },
   ];
 
   const revenueData = [
-    { month: "Jan", revenue: 12500 },
-    { month: "Feb", revenue: 15200 },
-    { month: "Mar", revenue: 18900 },
-    { month: "Apr", revenue: 22100 },
-    { month: "May", revenue: 25300 },
-    { month: "Jun", revenue: 28700 },
+    { month: "Jan", revenue: 12500, orders: 45 },
+    { month: "Feb", revenue: 15200, orders: 52 },
+    { month: "Mar", revenue: 18900, orders: 68 },
+    { month: "Apr", revenue: 22100, orders: 74 },
+    { month: "May", revenue: 25300, orders: 89 },
+    { month: "Jun", revenue: 28700, orders: 95 },
   ];
+
+  const StatCard = ({ title, value, change, icon: Icon, trend }: {
+    title: string;
+    value: string | number;
+    change: string;
+    icon: any;
+    trend: 'up' | 'down';
+  }) => (
+    <Card className="hover-lift group">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-3xl font-bold text-foreground">{value}</p>
+            <div className="flex items-center space-x-1">
+              {trend === 'up' ? (
+                <ArrowUp className="h-4 w-4 text-success" />
+              ) : (
+                <ArrowDown className="h-4 w-4 text-destructive" />
+              )}
+              <span className={cn(
+                "text-sm font-medium",
+                trend === 'up' ? "text-success" : "text-destructive"
+              )}>
+                {change}
+              </span>
+            </div>
+          </div>
+          <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow group-hover:scale-110 transition-all duration-300">
+            <Icon className="h-6 w-6 text-white" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Welcome Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Welcome Back, Brand Owner!</h1>
-            <p className="text-muted-foreground">Here's a quick overview of your brand's performance.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold text-gradient">Welcome Back!</h1>
+            <p className="text-lg text-muted-foreground">Here's what's happening with your brand today.</p>
           </div>
-          <Badge variant="secondary" className="px-4 py-2">
-            <TrendingUp className="w-4 h-4 mr-2" />
-            Growth: +12.5%
-          </Badge>
+          <div className="flex items-center space-x-3">
+            <Badge variant="success" className="animate-pulse">
+              <Activity className="w-3 h-3 mr-1" />
+              Live Data
+            </Badge>
+            <Badge>
+              <TrendingUp className="w-3 h-3 mr-1" />
+              +12.5% Growth
+            </Badge>
+          </div>
         </div>
 
-        {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="card-modern">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Top Product</CardTitle>
-              <Star className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{mostOrderedProduct}</div>
-              <p className="text-xs text-muted-foreground">
-                Most ordered this month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-modern">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Most Complaints</CardTitle>
-              <Package className="h-4 w-4 text-warning" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{mostComplainedProduct}</div>
-              <p className="text-xs text-muted-foreground">
-                Needs attention
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-modern">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Repeat Buyers</CardTitle>
-              <Users className="h-4 w-4 text-success" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{repeatCustomers}</div>
-              <p className="text-xs text-muted-foreground">
-                Loyal customers
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-modern">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Order Value</CardTitle>
-              <DollarSign className="h-4 w-4 text-accent" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${avgOrderValue.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">
-                +5.2% from last month
-              </p>
-            </CardContent>
-          </Card>
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Top Product"
+            value={mostOrderedProduct.length > 15 ? mostOrderedProduct.substring(0, 15) + "..." : mostOrderedProduct}
+            change="+8.2%"
+            icon={Star}
+            trend="up"
+          />
+          <StatCard
+            title="Most Complaints"
+            value={mostComplainedProduct.length > 15 ? mostComplainedProduct.substring(0, 15) + "..." : mostComplainedProduct}
+            change="-2.1%"
+            icon={Package}
+            trend="down"
+          />
+          <StatCard
+            title="Repeat Buyers"
+            value={repeatCustomers}
+            change="+15.3%"
+            icon={Users}
+            trend="up"
+          />
+          <StatCard
+            title="Avg Order Value"
+            value={`$${avgOrderValue.toFixed(0)}`}
+            change="+5.2%"
+            icon={DollarSign}
+            trend="up"
+          />
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Product Ratings Distribution */}
-          <Card className="card-modern">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Revenue Trend */}
+          <Card className="hover-glow">
             <CardHeader>
-              <CardTitle>Product Ratings Distribution</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                <span>Revenue Growth</span>
+              </CardTitle>
               <CardDescription>
-                Distribution of feedback ratings across all products
+                Monthly revenue and order trends over the past 6 months
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{}}>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={ratingDistribution}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="rating" />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={4} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <ChartContainer>
+                <AreaChart data={revenueData}>
+                  <defs>
+                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="rgb(147 51 234)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="rgb(147 51 234)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(39 39 50)" />
+                  <XAxis dataKey="month" stroke="rgb(156 163 175)" />
+                  <YAxis stroke="rgb(156 163 175)" />
+                  <ChartTooltip content={<ChartTooltip />} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="rgb(147 51 234)" 
+                    strokeWidth={3}
+                    fill="url(#revenueGradient)"
+                  />
+                </AreaChart>
               </ChartContainer>
             </CardContent>
           </Card>
 
-          {/* Customer Sentiment Analysis */}
-          <Card className="card-modern">
+          {/* Customer Sentiment */}
+          <Card className="hover-glow">
             <CardHeader>
-              <CardTitle>Customer Sentiment Analysis</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-accent rounded-full animate-pulse" />
+                <span>Customer Sentiment</span>
+              </CardTitle>
               <CardDescription>
                 Overall sentiment breakdown from customer feedback
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{}}>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={sentimentData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={120}
-                      dataKey="value"
-                    >
-                      {sentimentData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                  </PieChart>
-                </ResponsiveContainer>
+              <ChartContainer>
+                <PieChart>
+                  <Pie
+                    data={sentimentData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={120}
+                    dataKey="value"
+                    stroke="rgb(15 15 20)"
+                    strokeWidth={2}
+                  >
+                    {sentimentData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltip />} />
+                </PieChart>
               </ChartContainer>
-              <div className="flex justify-center mt-4 space-x-4">
+              <div className="flex justify-center mt-6 space-x-6">
                 {sentimentData.map((item) => (
-                  <div key={item.name} className="flex items-center">
+                  <div key={item.name} className="flex items-center space-x-2">
                     <div 
-                      className="w-3 h-3 rounded-full mr-2" 
-                      style={{ backgroundColor: item.color }}
-                    ></div>
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: item.fill }}
+                    />
+                    <span className="text-sm font-medium text-foreground">
+                      {item.name}
+                    </span>
                     <span className="text-sm text-muted-foreground">
-                      {item.name}: {item.value}
+                      ({item.value})
                     </span>
                   </div>
                 ))}
@@ -334,32 +348,77 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Recent Activity */}
-        <Card className="card-modern">
+        {/* Rating Distribution */}
+        <Card className="hover-glow">
           <CardHeader>
-            <CardTitle>Monthly Revenue Growth</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-warning rounded-full animate-pulse" />
+              <span>Product Ratings Distribution</span>
+            </CardTitle>
             <CardDescription>
-              Your revenue trend over the past 6 months
+              Distribution of feedback ratings across all products
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{}}>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={3}
-                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <ChartContainer>
+              <BarChart data={ratingDistribution} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgb(39 39 50)" />
+                <XAxis dataKey="rating" stroke="rgb(156 163 175)" />
+                <YAxis stroke="rgb(156 163 175)" />
+                <ChartTooltip content={<ChartTooltip />} />
+                <Bar 
+                  dataKey="count" 
+                  radius={[8, 8, 0, 0]}
+                  stroke="rgb(15 15 20)"
+                  strokeWidth={1}
+                />
+              </BarChart>
             </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card className="border-gradient">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Zap className="w-5 h-5 text-primary" />
+              <span>Quick Actions</span>
+            </CardTitle>
+            <CardDescription>
+              Frequently used actions to manage your business
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <button className="btn-ghost-modern text-left p-4 space-y-2 hover-lift">
+                <ShoppingCart className="w-6 h-6 text-primary" />
+                <div>
+                  <p className="font-medium">View Orders</p>
+                  <p className="text-xs text-muted-foreground">Manage recent orders</p>
+                </div>
+              </button>
+              <button className="btn-ghost-modern text-left p-4 space-y-2 hover-lift">
+                <BarChart3 className="w-6 h-6 text-accent" />
+                <div>
+                  <p className="font-medium">Analytics</p>
+                  <p className="text-xs text-muted-foreground">View detailed reports</p>
+                </div>
+              </button>
+              <button className="btn-ghost-modern text-left p-4 space-y-2 hover-lift">
+                <MessageSquare className="w-6 h-6 text-success" />
+                <div>
+                  <p className="font-medium">Auto-Reply</p>
+                  <p className="text-xs text-muted-foreground">Configure responses</p>
+                </div>
+              </button>
+              <button className="btn-ghost-modern text-left p-4 space-y-2 hover-lift">
+                <Users className="w-6 h-6 text-warning" />
+                <div>
+                  <p className="font-medium">Customers</p>
+                  <p className="text-xs text-muted-foreground">Manage customer data</p>
+                </div>
+              </button>
+            </div>
           </CardContent>
         </Card>
       </div>
